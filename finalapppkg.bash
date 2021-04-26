@@ -399,6 +399,8 @@ fi
       cleanup
 
 }
+
+#Function to calculate deferral time and store plist files. Variables of plist files defined from line 136-139
 deferraltimecalcfunc(){
 # Look if app is open via process name
 appOpen="$(pgrep -ix "$appID" | wc -l)"
@@ -486,6 +488,7 @@ else
           /bin/rm -rf "/private/tmp/"downloadappPath"" &> /dev/null
           download "${url}"
         fi
+        #going to check the time stamp
         deferraltimecalcfunc
         else
       # didn't find the file, do something
@@ -505,7 +508,8 @@ if [[ $appOpen -gt 0 ]]; then
   echo "App is open"
   if ([ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
 #if ([ $appOpen -gt 0 ] && [ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
-
+      
+      #Write the deferral time
       defaults write "$lastDeferralTimeplist" DeferralTimeStamp -int $timeSinceDeferral
 #      fGetCurrenUser
         if [[ "$count" -eq "totdefer" ]] ; then
@@ -592,6 +596,7 @@ if [[ $appOpen -gt 0 ]]; then
             exit 0
         else
           echo "User chose to defer"
+		    #Read deferral count
             count=`defaults read "$counterpathplist" DeferralCount`
 # echo "Old count is $oldcount"
             echo "Old count is $count"

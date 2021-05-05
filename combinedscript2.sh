@@ -23,7 +23,12 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 DEBUG=0
 
 # notify behavior
+if [ ! -z "${5}" ]; then
+NOTIFY="${5}"
+else
 NOTIFY=success
+fi
+echo "NOTIFY : $NOTIFY"
 # options:
 #   - success      notify the user on success
 #   - silent       no notifications
@@ -31,7 +36,12 @@ NOTIFY=success
 
 
 # behavior when blocking processes are found
+if [ ! -z "${6}" ]; then
+BLOCKING_PROCESS_ACTION="${6}"
+else
 BLOCKING_PROCESS_ACTION=prompt_user_then_kill
+fi
+echo "BLOCKING_PROCESS_ACTION : $BLOCKING_PROCESS_ACTION"
 # options:
 #   - ignore       continue even when blocking processes are found
 #   - silent_fail  exit script without prompt or installation
@@ -55,8 +65,8 @@ BLOCKING_PROCESS_ACTION=prompt_user_then_kill
 
 
 # logo-icon used in dialog boxes if app is blocking
-if [ ! -z "$6" ]; then
-LOGO="$6"
+if [ ! -z "${7}" ]; then
+LOGO="${7}"
 else
 LOGO=appstore
 fi
@@ -173,16 +183,16 @@ REOPEN="yes"
 
 # MARK: Functions
 
-appversionfallback(){
-  echo "Inside app version fallback"
+##appversionfallback(){
+##  echo "Inside app version fallback"
 #  if [[ ! -n $appNewVersion ]]; then
-echo "Varcheck = $varcheck"
-  if [ "$varcheck" -eq 1 ]; then
-    echo "Storing app version"
-         appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
-         defaults write "$appversionplist" AppVersionNumberStored -string $appversion
-  fi
-}
+##echo "Varcheck = $varcheck"
+##  if [ "$varcheck" -eq 1 ]; then
+##    echo "Storing app version"
+##         appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
+##         defaults write "$appversionplist" AppVersionNumberStored -string $appversion
+##  fi
+##}
 cleanupAndExit() { # $1 = exit code, $2 message
     if [[ -n $2 && $1 -ne 0 ]]; then
         printlog "ERROR: $2"
@@ -472,7 +482,13 @@ fi
                       if [[ "$count" -eq "totdefer" ]]; then
 
                         #displaydialog "No more deferrals left Quit “$x” to continue updating" "The application “$x” needs to be updated."
+                        if [[ $jamfvar == "/" ]]; then
+                          printlog "Using Jamf Pro MDM"
+                          userdefercount="$(($totdefer-$count))"
+                          button="$( "$jamfHelper" -windowType hud -lockHUD -title "$name" -heading "" -description "$saveQuitMSG" -button1 "Defer ($userdefercount)" -button2 "No Deferrals Left" -alignDescription center -alignHeading center -icon "$LOGO" -iconSize "20x20" -windowPosition lr -timeout 3600)"
+                        else
                         osascript -e "display dialog \"No more deferrals left Quit "$x" to continue updating\" with  title \"The application “$x” needs to be updated.\" buttons {\"Quit and Update\"} default button \"Quit and Update\" with icon POSIX file \"$LOGO\""
+                        fi
                         echo "Time since last deferral is equal or greater than ${hoursToDefer} hours"
                         echo "Deferral count is at or above max deferrals allowed...."
                         printlog "telling app $x to quit"
@@ -481,8 +497,8 @@ fi
 #                        appOpen= pgrep -xq "$blockingProcesses"
 #                        if [[ $appOpen -gt 0 ]]; then
                           # give the user a bit of time to quit apps
-                          printlog "waiting 30 seconds for processes to quit"
-                          sleep 30
+                          printlog "waiting 15 seconds for processes to quit"
+                          sleep 15
 #                        else
                           count=0
                           #if the app is closed
@@ -531,8 +547,8 @@ fi
 #                          echo "appOpen value: $appOpen"
 #                          if [[ $appOpen -gt 0 ]]; then
                             # give the user a bit of time to quit apps
-                            printlog "waiting 30 seconds for processes to quit"
-                            sleep 30
+                            printlog "waiting 15 seconds for processes to quit"
+                            sleep 15
 #                          else
                             count=0
                             #if the app is closed
@@ -578,8 +594,8 @@ fi
                         printlog "telling app $x to quit"
                         runAsUser osascript -e "tell app \"$x\" to quit"
                         # give the user a bit of time to quit apps
-                        printlog "waiting 30 seconds for processes to quit"
-                        sleep 30
+                        printlog "waiting 15 seconds for processes to quit"
+                        sleep 15
                       fi
                     fi
                       ;;
@@ -588,8 +604,8 @@ fi
                       printlog "telling app $x to quit"
                       runAsUser osascript -e "tell app \"$x\" to quit"
                       # give the user a bit of time to quit apps
-                      printlog "waiting 30 seconds for processes to quit"
-                      sleep 30
+                      printlog "waiting 15 seconds for processes to quit"
+                      sleep 15
                       if [[ $i > 1 && $BLOCKING_PROCESS_ACTION = tell_user_then_kill ]]; then
                           printlog "Changing BLOCKING_PROCESS_ACTION to kill"
                           BLOCKING_PROCESS_ACTION=kill
@@ -663,21 +679,21 @@ installAppWithPath() { # $1: path to app to install in $targetDir
         cleanupAndExit 5 "Team IDs do not match"
     fi
 
-    if [[ ! -n $appNewVersion ]]; then
-      echo "App New Version not specified"
+##    if [[ ! -n $appNewVersion ]]; then
+##      echo "App New Version not specified"
       #To check if AppNewVersion variable exists and store it before it is changed. (Important for cases where app version is the same)
-      varcheck=1
-    fi
+##      varcheck=1
+##    fi
     # versioncheck
     # credit: Søren Theilgaard (@theilgaard)
     appNewVersion=$(defaults read $appPath/Contents/Info.plist CFBundleShortVersionString)
     if [[ $appversion == $appNewVersion ]]; then
         printlog "Downloaded version of $name is $appNewVersion, same as installed."
-        if [ "$varcheck" -eq 1 ]; then
-          echo "App New version does not exist so storing the same version as installed"
-          appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
-          defaults write "$appversionplist" AppVersionNumberStored -string $appversion
-        fi
+        ##if [ "$varcheck" -eq 1 ]; then
+          ##echo "App New version does not exist so storing the same version as installed"
+          ##appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
+          ##defaults write "$appversionplist" AppVersionNumberStored -string $appversion
+        ##fi
 #        cleanupAndExit
         if [[ $INSTALL != "force" ]]; then
             message="$name, version $appNewVersion, is  the latest version."
@@ -780,11 +796,11 @@ installFromPKG() {
         cleanupAndExit 5
     fi
 
-    if [[ ! -n $appNewVersion ]]; then
-      echo "App New Version not specified"
+    ##if [[ ! -n $appNewVersion ]]; then
+      ##echo "App New Version not specified"
       #To check if AppNewVersion variable exists and store it before it is changed. (Important for cases where app version is the same)
-      varcheck=1
-    fi
+      ##varcheck=1
+    ##fi
     # Check version of pkg to be installed if packageID is set
     if [[ $packageID != "" && $appversion != "" ]]; then
         printlog "Checking package version."
@@ -795,11 +811,11 @@ installFromPKG() {
         printlog "Downloaded package $packageID version $appNewVersion"
         if [[ $appversion == $appNewVersion ]]; then
             printlog "Downloaded version of $name is the same as installed."
-            if [ "$varcheck" -eq 1 ]; then
-              echo "App New version does not exist so storing the same version as installed"
-              appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
-              defaults write "$appversionplist" AppVersionNumberStored -string $appversion
-            fi
+            ##if [ "$varcheck" -eq 1 ]; then
+              ##echo "App New version does not exist so storing the same version as installed"
+              ##appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
+              ##defaults write "$appversionplist" AppVersionNumberStored -string $appversion
+            ##fi
             if [[ $INSTALL != "force" ]]; then
                 message="$name, version $appNewVersion, is  the latest version."
                 if [[ $currentUser != "loginwindow" && $NOTIFY == "all" ]]; then
@@ -966,7 +982,7 @@ finishing() {
         displaynotification "$message" "$name update/installation complete!"
     fi
 
-    appversionfallback
+    #appversionfallback
 
 }
 
@@ -3438,11 +3454,11 @@ if [[ -n $appNewVersion ]]; then
     if [[ $appversion == $appNewVersion ]]; then
         if [[ $DEBUG -eq 0 ]]; then
             printlog "There is no newer version available."
-            appversionplist="/Library/Application Support/JAMF/appversions/${name}"
-            if [ -d $appversionplist ]; then
-              printlog "AppVersion Specified so deleting fail safe"
-              rm -rf "$appversionplist"
-            fi
+            ##appversionplist="/Library/Application Support/JAMF/appversions/${name}"
+            ##if [ -d $appversionplist ]; then
+              ##printlog "AppVersion Specified so deleting fail safe"
+              ##rm -rf "$appversionplist"
+            ##fi
             if [[ $INSTALL != "force" ]]; then
                 message="$name, version $appNewVersion, is  the latest version."
                 if [[ $currentUser != "loginwindow" && $NOTIFY == "all" ]]; then
@@ -3458,25 +3474,25 @@ if [[ -n $appNewVersion ]]; then
         fi
     fi
 else
-    printlog "Latest version not specified."
-    appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
-     if [ -f $appversionplist ]; then
-        printlog "App Version file found."
-        appversionstored=`defaults read "$appversionplist" AppVersionNumberStored`
+##    printlog "Latest version not specified."
+##    appversionplist="/Library/Application Support/JAMF/appversions/${name}/com.g2.appversion.plist"
+##     if [ -f $appversionplist ]; then
+##        printlog "App Version file found."
+##        appversionstored=`defaults read "$appversionplist" AppVersionNumberStored`
 #        if [[ $appversionstored == $appversion ]]; then
 
 #        if  [[ "$appversionstored" > "$appversion" || "$appversionstored" == "$appversion" ]]; then
-          if  [[ "$appversionstored" == "$appversion" ]]; then
-          printlog "Stored version $appversionstored and App Version $appversion: No new version to install or update"
-          cleanupAndExit 0 "No new version to install"
-          exit 0
-        else
+##          if  [[ "$appversionstored" == "$appversion" ]]; then
+##          printlog "Stored version $appversionstored and App Version $appversion: No new version to install or update"
+##          cleanupAndExit 0 "No new version to install"
+##          exit 0
+##        else
           #printlog "Latest version of $name is: $appversion"
-          rm -rf "/Library/Application Support/JAMF/appversions/${name}"
-        fi
-    else
-        printlog "App Version file not found."
-    fi
+##          rm -rf "/Library/Application Support/JAMF/appversions/${name}"
+##          fi
+##    else
+##        printlog "App Version file not found."
+##    fi
 fi
 
 

@@ -474,6 +474,7 @@ fi
                     kill)
                       printlog "killing process $x"
                       pkill $x
+                      if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
                       sleep 5
                       ;;
                     prompt_user|prompt_user_then_kill)
@@ -493,6 +494,8 @@ fi
                         echo "Deferral count is at or above max deferrals allowed...."
                         printlog "telling app $x to quit"
                         runAsUser osascript -e "tell app \"$x\" to quit"
+                        if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
+                        
                         #if the app is open then loop again
 #                        appOpen= pgrep -xq "$blockingProcesses"
 #                        if [[ $appOpen -gt 0 ]]; then
@@ -541,6 +544,7 @@ fi
                         else
                           printlog "telling app $x to quit"
                           runAsUser osascript -e "tell app \"$x\" to quit"
+                          if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
 
                           #if the app is open then loop again
 #                          appOpen= pgrep -xq "$blockingProcesses"
@@ -593,6 +597,7 @@ fi
                       else
                         printlog "telling app $x to quit"
                         runAsUser osascript -e "tell app \"$x\" to quit"
+                        if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
                         # give the user a bit of time to quit apps
                         printlog "waiting 15 seconds for processes to quit"
                         sleep 15
@@ -603,6 +608,7 @@ fi
                       button=$(displaydialogContinue "Quit “$x” to continue updating? (This is an important update). Wait for notification of update before launching app again." "The application “$x” needs to be updated.")
                       printlog "telling app $x to quit"
                       runAsUser osascript -e "tell app \"$x\" to quit"
+                      if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
                       # give the user a bit of time to quit apps
                       printlog "waiting 15 seconds for processes to quit"
                       sleep 15

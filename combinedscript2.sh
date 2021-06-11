@@ -23,12 +23,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 DEBUG=0
 
 # notify behavior
-if [ ! -z "${5}" ]; then
-NOTIFY="${5}"
-else
 NOTIFY=success
-fi
-echo "NOTIFY : $NOTIFY"
 # options:
 #   - success      notify the user on success
 #   - silent       no notifications
@@ -36,12 +31,7 @@ echo "NOTIFY : $NOTIFY"
 
 
 # behavior when blocking processes are found
-if [ ! -z "${6}" ]; then
-BLOCKING_PROCESS_ACTION="${6}"
-else
 BLOCKING_PROCESS_ACTION=prompt_user_then_kill
-fi
-echo "BLOCKING_PROCESS_ACTION : $BLOCKING_PROCESS_ACTION"
 # options:
 #   - ignore       continue even when blocking processes are found
 #   - silent_fail  exit script without prompt or installation
@@ -65,8 +55,8 @@ echo "BLOCKING_PROCESS_ACTION : $BLOCKING_PROCESS_ACTION"
 
 
 # logo-icon used in dialog boxes if app is blocking
-if [ ! -z "${7}" ]; then
-LOGO="${7}"
+if [ ! -z "${8}" ]; then
+LOGO="${8}"
 else
 LOGO=appstore
 fi
@@ -80,6 +70,7 @@ fi
 
 # install behavior
 INSTALL=""
+#INSTALL=force
 # options:
 #  -               When not set, software will only be installed
 #                  if it is newer/different in version
@@ -209,8 +200,8 @@ cleanupAndExit() { # $1 = exit code, $2 message
         hdiutil detach "$dmgmount"
     fi
 
-    if [ -e "/Library/Application Support/JAMF/${name}" ]; then
-      /bin/rm -rf "/Library/Application Support/JAMF/${name}" &> /dev/null
+    if [ -e "/Library/Application Support/G2/${name}" ]; then
+      /bin/rm -rf "/Library/Application Support/G2/${name}" &> /dev/null
     fi
 
 #    appversionfallback
@@ -225,9 +216,9 @@ deferraltimecalcfunc(){
 # Look if app is open via process name
 #appOpen="$(pgrep -ix "$appID" | wc -l)"
 #path to counter file
-counterpathplist="/Library/Application Support/JAMF/${name}/com.g2.osupdatedeferral.plist"
+counterpathplist="/Library/Application Support/G2/${name}/com.g2.osupdatedeferral.plist"
 #path to lastDeferralTimeplist
-lastDeferralTimeplist="/Library/Application Support/JAMF/${name}/lastDeferralTime.plist"
+lastDeferralTimeplist="/Library/Application Support/G2/${name}/lastDeferralTime.plist"
 
 #for x in ${blockingProcesses}; do
 #  pgrep -xq "$x"
@@ -446,8 +437,9 @@ checkRunningProcesses() {
     totdefer=2
 deferraltimecalcfunc
 
-saveQuitMSG="The Application must be quit in order to update.
-Save all data before quitting."
+#saveQuitMSG="The Application must be quit in order to update.
+#Please wait until the application reopens"
+saveQuitMSG="$name has a required update available and must be quit to update. You have two four-hour deferrals before being forced to proceed with the update."
 qd="Quit & Update"
 jamfHelper="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
@@ -461,7 +453,7 @@ else
   echo "exiting"
   exit 0
 fi
-
+echo "Blocking Processes : ${blockingProcesses}"
     # try at most 3 times
     for i in {1..4}; do
         countedProcesses=0
@@ -486,7 +478,7 @@ fi
                         if [[ $jamfvar == "/" ]]; then
                           printlog "Using Jamf Pro MDM"
                           userdefercount="$(($totdefer-$count))"
-                          button="$( "$jamfHelper" -windowType hud -lockHUD -title "$name" -heading "" -description "$saveQuitMSG" -button1 "Defer ($userdefercount)" -button2 "No Deferrals Left" -alignDescription center -alignHeading center -icon "$LOGO" -iconSize "20x20" -windowPosition lr -timeout 3600)"
+                          button="$( "$jamfHelper" -windowType hud -lockHUD -title "$name" -heading "" -description "$saveQuitMSG" -button1 "Quit & Update" -button2 "No Deferrals Left" -alignDescription center -alignHeading center -icon "$LOGO" -iconSize "20x20" -windowPosition lr -timeout 3600)"
                         else
                         osascript -e "display dialog \"No more deferrals left Quit "$x" to continue updating\" with  title \"The application “$x” needs to be updated.\" buttons {\"Quit and Update\"} default button \"Quit and Update\" with icon POSIX file \"$LOGO\""
                         fi
@@ -495,13 +487,13 @@ fi
                         printlog "telling app $x to quit"
                         runAsUser osascript -e "tell app \"$x\" to quit"
                         if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
-                        
+
                         #if the app is open then loop again
 #                        appOpen= pgrep -xq "$blockingProcesses"
 #                        if [[ $appOpen -gt 0 ]]; then
                           # give the user a bit of time to quit apps
-                          printlog "waiting 15 seconds for processes to quit"
-                          sleep 15
+                          printlog "waiting 10 seconds for processes to quit"
+                          sleep 10
 #                        else
                           count=0
                           #if the app is closed
@@ -551,8 +543,8 @@ fi
 #                          echo "appOpen value: $appOpen"
 #                          if [[ $appOpen -gt 0 ]]; then
                             # give the user a bit of time to quit apps
-                            printlog "waiting 15 seconds for processes to quit"
-                            sleep 15
+                            printlog "waiting 10 seconds for processes to quit"
+                            sleep 10
 #                          else
                             count=0
                             #if the app is closed
@@ -599,8 +591,8 @@ fi
                         runAsUser osascript -e "tell app \"$x\" to quit"
                         if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
                         # give the user a bit of time to quit apps
-                        printlog "waiting 15 seconds for processes to quit"
-                        sleep 15
+                        printlog "waiting 10 seconds for processes to quit"
+                        sleep 10
                       fi
                     fi
                       ;;
@@ -610,8 +602,8 @@ fi
                       runAsUser osascript -e "tell app \"$x\" to quit"
                       if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
                       # give the user a bit of time to quit apps
-                      printlog "waiting 15 seconds for processes to quit"
-                      sleep 15
+                      printlog "waiting 10 seconds for processes to quit"
+                      sleep 10
                       if [[ $i > 1 && $BLOCKING_PROCESS_ACTION = tell_user_then_kill ]]; then
                           printlog "Changing BLOCKING_PROCESS_ACTION to kill"
                           BLOCKING_PROCESS_ACTION=kill
@@ -974,7 +966,7 @@ finishing() {
     printlog "Finishing…"
     sleep 10 # wait a moment to let spotlight catch up
     getAppVersion
-
+    updatedMSG="$name has been updated. Thank you."
     if [[ -z $appversion ]]; then
         message="Installed $name"
     else
@@ -985,7 +977,21 @@ finishing() {
 
     if [[ $currentUser != "loginwindow" && ( $NOTIFY == "success" || $NOTIFY == "all" ) ]]; then
         printlog "notifying"
-        displaynotification "$message" "$name update/installation complete!"
+        if [[ $appClosed == 1 ]]; then
+         if [[ $jamfvar == "/" ]]; then
+          printlog "Using Jamf Pro MDM"
+          button="$( "$jamfHelper" -windowType hud -lockHUD -title "$name" -heading "" -description "$updatedMSG" -button2 "Ok" -alignDescription center -alignHeading center -icon "$LOGO" -iconSize "20x20" -windowPosition lr -timeout 3600)"
+         else
+          displaynotification "$message" "$name update/installation complete!"
+         fi
+       else
+         if [[ ( $NOTIFY == "success" || $NOTIFY == "all" ) ]]; then
+           displaynotification "$message" "$name update/installation complete!"
+         else
+         printlog "App not closed, so no dialog prompt."
+         fi
+        fi
+
     fi
 
     #appversionfallback
@@ -1023,6 +1029,7 @@ while [[ -n $1 ]]; do
         eval $1
     else
         # assume it's a label
+
         label=$1
     fi
     # shift to next argument
@@ -1034,6 +1041,10 @@ label=${label:l}
 
 printlog "################## Start Installomator v. $VERSION"
 printlog "################## $label"
+printlog "################## DEBUG : $DEBUG"
+printlog "################## NOTIFY : $NOTIFY"
+printlog "################## BLOCKING_PROCESS_ACTION : $BLOCKING_PROCESS_ACTION"
+printlog "################## LOGO : $LOGO"
 
 # get current user
 currentUser=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ { print $3 }')
@@ -1298,13 +1309,17 @@ blender)
     expectedTeamID="68UA947AUU"
     ;;
 bluejeans)
-    name="BlueJeans"
-    type="pkg"
-    downloadURL=$(curl -fs "https://www.bluejeans.com/downloads" | xmllint --html --format - 2>/dev/null | grep -o "https://.*BlueJeansInstaller.dmg" | sed 's/dmg/pkg/g')
-    appNewVersion=$(echo $downloadURL | cut -d '/' -f6)
-    expectedTeamID="HE4P42JBGN"
-    #Company="Verizon"
-    ;;
+        name="BlueJeans"
+        type="pkg"
+        if [[ $(arch) == "arm64" ]]; then
+            downloadURL=$(curl -fs "https://www.bluejeans.com/downloads" | xmllint --html --format - 2>/dev/null | grep -o "https://.*BlueJeansInstaller.*arm.*.pkg" )
+        elif [[ $(arch) == "i386" ]]; then
+            downloadURL=$(curl -fs "https://www.bluejeans.com/downloads" | xmllint --html --format - 2>/dev/null | grep -o "https://.*BlueJeansInstaller.*x86.*.dmg" | sed 's/dmg/pkg/g')
+        fi
+        appNewVersion=$(echo $downloadURL | cut -d '/' -f6)
+        expectedTeamID="HE4P42JBGN"
+        #Company="Verizon"
+        ;;
 boxdrive)
     # credit: Isaac Ordonez, Mann consulting (@mannconsulting)
     name="Box"
@@ -1593,11 +1608,59 @@ firefox_da)
     expectedTeamID="43AQ936H96"
     blockingProcesses=( firefox )
     ;;
-firefoxesr|\
-firefoxesrpkg)
+firefox_intl)
+    # This label will try to figure out the selected language of the user, 
+    # and install corrosponding version of Firefox
     name="Firefox"
-    type="pkg"
-    downloadURL="https://download.mozilla.org/?product=firefox-esr-pkg-latest-ssl&os=osx"
+    type="dmg"
+    userLanguage=$(runAsUser defaults read .GlobalPreferences AppleLocale)
+    printlog "Found language $userLanguage to be used for Firefox."
+    if ! curl -fs "https://ftp.mozilla.org/pub/firefox/releases/latest/README.txt" | grep -o "=$userLanguage"; then
+        userLanguage=$(echo $userLanguage | cut -c 1-2)
+        if ! curl -fs "https://ftp.mozilla.org/pub/firefox/releases/latest/README.txt" | grep "=$userLanguage"; then
+            userLanguage="en_US"
+        fi
+    fi
+    printlog "Using language $userLanguage for download."
+    downloadURL="https://download.mozilla.org/?product=firefox-latest&amp;os=osx&amp;lang=$userLanguage"
+    if ! curl -sfL --output /dev/null -r 0-0 "$downloadURL" ; then
+        printlog "Download not found for that language. Using en-US"
+        downloadURL="https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US"
+    fi
+    appNewVersion=$(/usr/bin/curl -sl https://www.mozilla.org/en-US/firefox/releases/ | /usr/bin/grep '<html' | /usr/bin/awk -F\" '{ print $8 }') # Credit: William Smith (@meck)
+    expectedTeamID="43AQ936H96"
+    blockingProcesses=( firefox )
+    ;;
+    firefoxesr|\
+    firefoxesrpkg)
+        name="Firefox"
+        type="pkg"
+        downloadURL="https://download.mozilla.org/?product=firefox-esr-pkg-latest-ssl&os=osx"
+        appNewVersion=$(curl -fsIL "$downloadURL" | grep -i "^location" | awk '{print $2}' | sed -E 's/.*releases\/([0-9.]*)esr.*/\1/g')
+        expectedTeamID="43AQ936H96"
+        blockingProcesses=( firefox )
+    ;;
+firefoxesr_intl)
+    # This label will try to figure out the selected language of the user, 
+    # and install corrosponding version of Firefox ESR
+    name="Firefox"
+    type="dmg"
+    userLanguage=$(runAsUser defaults read .GlobalPreferences AppleLocale)
+    printlog "Found language $userLanguage to be used for Firefox."
+    if ! curl -fs "https://ftp.mozilla.org/pub/firefox/releases/latest-esr/README.txt" | grep -o "=$userLanguage"; then
+        userLanguage=$(echo $userLanguage | cut -c 1-2)
+        if ! curl -fs "https://ftp.mozilla.org/pub/firefox/releases/latest-esr/README.txt" | grep "=$userLanguage"; then
+            userLanguage="en_US"
+        fi
+    fi
+    printlog "Using language $userLanguage for download."
+    downloadURL="https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=osx&lang=$userLanguage"
+    # https://download.mozilla.org/?product=firefox-esr-latest-ssl&os=osx&lang=en-US
+    if ! curl -sfL --output /dev/null -r 0-0 "$downloadURL" ; then
+        printlog "Download not found for that language. Using en-US"
+        downloadURL="https://download.mozilla.org/?product=firefox-latest&os=osx&lang=en-US"
+    fi
+    appNewVersion=$(curl -fsIL "$downloadURL" | grep -i "^location" | awk '{print $2}' | sed -E 's/.*releases\/([0-9.]*)esr.*/\1/g')
     expectedTeamID="43AQ936H96"
     blockingProcesses=( firefox )
     ;;
@@ -1925,6 +1988,7 @@ pycharmce)
       downloadURL="https://download.jetbrains.com/product?code=PCC&latest&distribution=macM1"
     fi
     expectedTeamID="2ZEFAR8TH3"
+    blockingProcesses=( "pycharm" "pycharm ce")
     #Company="JetBrains"
     ;;
 karabinerelements)
@@ -2732,7 +2796,7 @@ vagrant)
     name="Vagrant"
     type="pkgInDmg"
     pkgName="vagrant.pkg"
-    downloadURL=$(curl -fs https://www.vagrantup.com/downloads | tr '><' '\n' | awk -F'"' '/x86_64.dmg/ {print $6}' | head -1)
+    #downloadURL=$(curl -fs https://www.vagrantup.com/downloads | tr '><' '\n' | awk -F'"' '/x86_64.dmg/ {print $6}' | head -1)
     #appNewVersion=$( curl -fs https://www.vagrantup.com/downloads.html | grep -i "Current Version" )
     appNewVersion=$(versionFromGit hashicorp vagrant)
     expectedTeamID="D38WU7D763"
@@ -2810,7 +2874,7 @@ vscodium)
     blockingProcesses=( Electron )
     ;;
 webexmeetings)
-    # credit: Erik Stam (@erikstam)
+        # credit: Erik Stam (@erikstam)
     name="Cisco Webex Meetings"
     type="pkgInDmg"
     downloadURL="https://akamaicdn.webex.com/client/webexapp.dmg"
@@ -2818,14 +2882,19 @@ webexmeetings)
     targetDir="/Applications"
     #blockingProcessesMaxCPU="5"
 #    blockingProcesses=( Webex )
-    blockingProcesses=( "Cisco Webex Meetings" )
+    blockingProcesses=( "Cisco Webex Meetings" "Webex" )
     ;;
 webexteams)
-    # credit: Erik Stam (@erikstam)
-    name="Webex Teams"
+        # credit: Erik Stam (@erikstam)
+    name="Webex"
     type="dmg"
-    downloadURL="https://binaries.webex.com/WebexTeamsDesktop-MACOS-Gold/WebexTeams.dmg"
+    if [[ $(arch) == arm64 ]]; then
+        downloadURL="https://binaries.webex.com/WebexDesktop-MACOS-Apple-Silicon-Gold/Webex.dmg"
+    elif [[ $(arch) == i386 ]]; then
+        downloadURL="https://binaries.webex.com/WebexTeamsDesktop-MACOS-Gold/Webex.dmg"
+    fi
     expectedTeamID="DE8Y96K9QP"
+#    blockingProcesses=( "Webex Teams" "Webex" )
     ;;
 whatsapp)
     name="WhatsApp"

@@ -538,6 +538,10 @@ echo "Blocking Processes : ${blockingProcesses}"
                           runAsUser osascript -e "tell app \"$x\" to quit"
                           if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
 
+                          if [ $x = "Microsoft Teams Helper" ] || [ $x = "Teams" ]; then
+                            pkill $x
+                            if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
+                          fi
                           #if the app is open then loop again
 #                          appOpen= pgrep -xq "$blockingProcesses"
 #                          echo "appOpen value: $appOpen"
@@ -1307,6 +1311,7 @@ blender)
     downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep .dmg) && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep .dmg)
     appNewVersion=$( echo "${downloadURL}" | sed -E 's/.*\/[a-zA-Z]*-([0-9.]*)-.*/\1/g' )
     expectedTeamID="68UA947AUU"
+    blockingProcesses=( "Blender" )
     ;;
 bluejeans)
         name="BlueJeans"
@@ -1561,6 +1566,24 @@ etrecheck)
     downloadURL="https://cdn.etrecheck.com/EtreCheckPro.zip"
     expectedTeamID="U87NE528LC"
     ;;
+#evernote)
+  #only runs on Intel mac's and Mac's with Rosetta2
+#    name="Evernote"
+#    type="dmg"
+#    downloadURL="https://evernote.com/download/get.php?file=EvernoteMac"
+#    appNewVersion=$(curl -fsIL "https://evernote.com/download/get.php?file=EvernoteMac" | grep -i "^location" | awk '{print $2}' | sed -E 's/.*\/[a-zA-Z]*-([0-9.]*)\..*/\1/g')
+#    expectedTeamID="Q79WDW8YH9"
+#    blockingProcesses=( NONE )
+#    ;;
+evernote)
+    name="Evernote"
+    type="dmg"
+    downloadURL=$(curl -fs -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)" "https://evernote.com/download" | grep -i ".dmg" | cut -d '"' -f2)
+    appNewVersion=$( echo "${downloadURL}" | sed -E 's/.*\/[a-zA-Z]*-([0-9.]*)-.*/\1/g' )
+    expectedTeamID="Q79WDW8YH9"
+    appName="Evernote.app"
+    blockingProcesses=( NONE )
+    ;;    
 exelbanstats)
     # credit: Søren Theilgaard (@theilgaard)
     name="Stats"
@@ -1976,6 +1999,7 @@ jetbrainspycharm)
       downloadURL="https://download.jetbrains.com/product?code=PCP&latest&distribution=macM1"
     fi
     expectedTeamID="2ZEFAR8TH3"
+#    blockingProcesses=( "pycharm" "pycharm ce")
     ;;
 jetbrainspycharmce|\
 pycharmce)
@@ -1988,7 +2012,7 @@ pycharmce)
       downloadURL="https://download.jetbrains.com/product?code=PCC&latest&distribution=macM1"
     fi
     expectedTeamID="2ZEFAR8TH3"
-    blockingProcesses=( "pycharm" "pycharm ce")
+#    blockingProcesses=( "pycharm" "pycharm ce")
     #Company="JetBrains"
     ;;
 karabinerelements)
@@ -3293,10 +3317,10 @@ microsoftteams)
     type="pkg"
     #packageID="com.microsoft.teams"
     downloadURL="https://go.microsoft.com/fwlink/?linkid=869428"
-    appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.teams.standalone"]/version' 2>/dev/null | sed -E 's/<version>([0-9.]*) .*/\1/')
+#    appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.teams.standalone"]/version' 2>/dev/null | sed -E 's/<version>([0-9.]*) .*/\1/')
     # Still using macadmin.software for version, as the path does not contain the version in a matching format. packageID can be used, but version is the same.
     expectedTeamID="UBF8T346G9"
-    blockingProcesses=( Teams "Microsoft Teams Helper" )
+    blockingProcesses=( "Microsoft Teams" "Microsoft Teams Helper" "Teams" )
     updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
     updateToolArguments=( --install --apps TEAM01 )
     ;;

@@ -488,6 +488,11 @@ echo "Blocking Processes : ${blockingProcesses}"
                         runAsUser osascript -e "tell app \"$x\" to quit"
                         if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
 
+
+                        if [ $x = "Microsoft Teams Helper" ] || [ $x = "Teams" ]; then
+                          pkill $x
+                          if [[ $? != 0 ]]; then kill -9 $(pgrep "$x"); fi
+                        fi
                         #if the app is open then loop again
 #                        appOpen= pgrep -xq "$blockingProcesses"
 #                        if [[ $appOpen -gt 0 ]]; then

@@ -439,13 +439,15 @@ deferraltimecalcfunc
 
 #saveQuitMSG="The Application must be quit in order to update.
 #Please wait until the application reopens"
-saveQuitMSG="$name has a required update available and must be quit to update. You have two four-hour deferrals before being forced to proceed with the update."
+saveQuitMSG="$name has a required update available and must be quit to update. You have two four-hour deferrals before being forced to proceed with the update. If you choose to Quit please wait for $name to reopen."
 qd="Quit & Update"
 jamfHelper="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
+if [[ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]]; then
+  echo "Deferral prompting: Time limit reached"
 
-if ([ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
-echo "Deferral prompting: Count less than total Defer and time limit reached"
+#if ([ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
+#echo "Deferral prompting: Count less than total Defer and time limit reached"
 
 elif ([ "$BLOCKING_PROCESS_ACTION" = "prompt_user_loop" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
   echo "Deferral Prompting: Prompt user Loop"
@@ -470,9 +472,10 @@ echo "Blocking Processes : ${blockingProcesses}"
                       sleep 5
                       ;;
                     prompt_user|prompt_user_then_kill)
-                    if ([ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
+#                    if ([ "$count" -le "$totdefer" ] && [ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]); then
 
-                      if [[ "$count" -eq "totdefer" ]]; then
+                      if [[ "$timeSinceDeferral" -ge "$hoursToDeferSecs" ]]; then
+                      if [[ "$count" -ge "totdefer" ]]; then
 
                         #displaydialog "No more deferrals left Quit “$x” to continue updating" "The application “$x” needs to be updated."
                         if [[ $jamfvar == "/" ]]; then
@@ -3211,8 +3214,8 @@ microsoftexcel)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.excel.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps XCEL2019 )
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps XCEL2019 )
     ;;
 microsoftlicenseremovaltool)
     # credit: Isaac Ordonez (@isaac) macadmins slack
@@ -3347,8 +3350,8 @@ microsoftword)
     #appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.word.standalone.365"]/cfbundleshortversionstring' 2>/dev/null | sed -E 's/<cfbundleshortversionstring>([0-9.]*)<.*/\1/')
     appNewVersion=$(curl -fsIL "$downloadURL" | grep -i location: | grep -o "/Microsoft_.*pkg" | cut -d "_" -f 3 | cut -d "." -f 1-2)
     expectedTeamID="UBF8T346G9"
-    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
-    updateToolArguments=( --install --apps MSWD2019 )
+#    updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
+#    updateToolArguments=( --install --apps MSWD2019 )
     ;;
 microsoftyammer)
     name="Yammer"

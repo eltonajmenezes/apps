@@ -1,5 +1,5 @@
 #!/bin/zsh
-label="" # if no label is sent to the script, this will be used
+label="" # if no label is sent to the script, this will be used 
 
 # Installomator
 #

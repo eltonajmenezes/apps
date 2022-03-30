@@ -3130,7 +3130,7 @@ jetbrainspycharm)
         jetbrainsdistribution="macM1"
     fi
     downloadURL="https://download.jetbrains.com/product?code=${jetbrainscode}&latest&distribution=${jetbrainsdistribution}"
-    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' )
+    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' | tr -d '\r')
     expectedTeamID="2ZEFAR8TH3"
     blockingProcesses=( NONE )
 #    blockingProcesses=( "pycharm" "pycharm ce")
@@ -3145,7 +3145,8 @@ pycharmce)
         jetbrainsdistribution="macM1"
     fi
     downloadURL="https://download.jetbrains.com/product?code=${jetbrainscode}&latest&distribution=${jetbrainsdistribution}"
-    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' )
+#    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' )
+    appNewVersion=$(curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' | tr -d '\r')
     expectedTeamID="2ZEFAR8TH3"
     blockingProcesses=( NONE )
 #    blockingProcesses=( "pycharm" "pycharm ce")
@@ -3185,7 +3186,7 @@ jetbrainswebstorm)
         jetbrainsdistribution="macM1"
     fi
     downloadURL="https://download.jetbrains.com/product?code=${jetbrainscode}&latest&distribution=${jetbrainsdistribution}"
-    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' )
+    appNewVersion=$( curl -fsIL "${downloadURL}" | grep -i "location" | tail -1 | sed -E 's/.*\/[a-zA-Z-]*-([0-9.]*).*[-.].*dmg/\1/g' | tr -d '\r')
     expectedTeamID="2ZEFAR8TH3"
     blockingProcesses=( NONE )
 #    blockingProcesses=( "pycharm" "pycharm ce")
@@ -5482,9 +5483,10 @@ if [[ -n $appversion ]]; then
 #    if is-at-least "${appNewVersion}" "${appversion}"; then
 #    if is-at-least "${appNewVersion} | xargs" "${appversion} | xargs"; then
 #    if is-at-least "${appNewVersion} | tr -d '[:space:]'" "${appversion} | tr -d '[:space:]'"; then
-    if is-at-least ""${appNewVersion}" | tr -s " "" ""${appversion}" | tr -s " ""; then
+#    if is-at-least ""${appNewVersion}" | tr -s " "" ""${appversion}" | tr -s " ""; then
+    if ! is-at-least "${appversion}" "${appNewVersion}"; then
 
-      echo "appversion=Current version $appversion is higher compared to online version $appNewVersion"
+      echo "Online Version = "${appNewVersion}", is lower compared to local version = "$appversion""
 #    if [[ $appversion == $appNewVersion ]]; then
         if [[ $DEBUG -ne 1 ]]; then
             printlog "There is no newer version available."
@@ -5509,7 +5511,7 @@ if [[ -n $appversion ]]; then
             printlog "DEBUG mode 1 enabled, not exiting, but there is no new version of app." WARN
         fi
       else
-        echo "echo appversion=Current version $appversion is lower compared to online version $appNewVersion"
+        echo "Online Version = "${appNewVersion}", is higher compared to local version = "$appversion""
     fi
 else
   printlog "App is not present"

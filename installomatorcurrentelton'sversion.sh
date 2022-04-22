@@ -1546,6 +1546,15 @@ hasDisplaySleepAssertion() {
     return 1
 }
 
+dockStatus=$(pgrep -x Dock)
+echo "Waiting for Desktop..."
+while [[ "$dockStatus" == "" ]]
+do
+  echo "Desktop is not loaded. Waiting."
+  sleep 5
+  dockStatus=$(pgrep -x Dock)
+done
+
 # MARK: check minimal macOS requirement
 autoload is-at-least
 
@@ -1929,7 +1938,7 @@ sfsymbols)
     name="SF Symbols"
     type="pkgInDmg"
     downloadURL=$( curl -fs "https://developer.apple.com/sf-symbols/" | grep -oe "https.*Symbols.*\.dmg" | head -1 )
-    appNewVersion=$( echo "$downloadURL" | head -1 | sed -E 's/.*SF-Symbols-([0-9.]*)\..*/\1/g')
+    appNewVersion=$( echo "$downloadURL" | sed -E 's/.*SF-Symbols-([0-9.]*)\..*/\1/g')
     expectedTeamID="Software Update"
     ;;
 aquaskk)
@@ -2100,7 +2109,13 @@ bitwarden)
 blender)
     name="blender"
     type="dmg"
-    downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep .dmg) && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep -m1 .dmg)
+    #downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep .dmg) && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep -m1 .dmg)
+    if [[ $(arch) == "arm64" ]]; then
+      downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep -o "https*.*arm64.*dmg") && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep -m1 .dmg)
+    elif [[ $(arch) == "i386" ]]; then
+      downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep -o "https*.*x64.*dmg") && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep -m1 .dmg)
+    fi
+  #  downloadURL=$(redirect=$(curl -sfL https://www.blender.org/download/ | sed 's/.*href="//' | sed 's/".*//' | grep .dmg) && curl -sfL "$redirect" | sed 's/.*href="//' | sed 's/".*//' | grep .dmg | head -n 1)
     appNewVersion=$( echo "${downloadURL}" | sed -E 's/.*\/[a-zA-Z]*-([0-9.]*)-.*/\1/g' )
     expectedTeamID="68UA947AUU"
     blockingProcesses=( "Blender" )
@@ -3467,6 +3482,16 @@ microsoftautoupdate)
     #updateTool="/Library/Application Support/Microsoft/MAU2.0/Microsoft AutoUpdate.app/Contents/MacOS/msupdate"
     #updateToolArguments=( --install --apps MSau04 )
     ;;
+microsoftazuredatastudio|\
+azuredatastudio)
+    name="Azure Data Studio"
+    type="zip"
+    downloadURL=$( curl -sL https://github.com/microsoft/azuredatastudio/releases/latest | grep 'macOS ZIP' | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*" )
+    appNewVersion=$(versionFromGit microsoft azuredatastudio )
+    expectedTeamID="UBF8T346G9"
+    appName="Azure Data Studio.app"
+    blockingProcesses=( "Azure Data Studio" )
+    ;;
 microsoftazurestorageexplorer)
     name="Microsoft Azure Storage Explorer"
     type="zip"
@@ -3490,7 +3515,7 @@ microsoftcompanyportal)
         updateToolArguments=( --install --apps IMCP01 )
     ;;
 microsoftdefenderatp)
-    name="Microsoft Defender ATP"
+    name="Microsoft Defender"
     type="pkg"
     downloadURL="https://go.microsoft.com/fwlink/?linkid=2097502"
     appNewVersion=$(curl -fs https://macadmins.software/latest.xml | xpath '//latest/package[id="com.microsoft.defender.standalone"]/version' 2>/dev/null | sed -E 's/<version>([0-9.]*) .*/\1/')
@@ -4286,9 +4311,25 @@ ringcentralapp)
     name="Glip"
     type="dmg"
     downloadURL="https://downloads.ringcentral.com/glip/rc/GlipForMac"
+    name="Ringcentral"
+    type="pkg"
+    if [[ $(arch) != "i386" ]]; then
+        downloadURL="https://app.ringcentral.com/download/RingCentral-arm64.pkg"
+    else
+        downloadURL="https://app.ringcentral.com/download/RingCentral.pkg"
+    fi
     expectedTeamID="M932RC5J66"
     blockingProcesses=( "Glip" )
+    blockingProcesses=( "Ringcentral" )
     ;;
+#ringcentralapp)
+    # credit: Isaac Ordonez, Mann consulting (@mannconsulting)
+#    name="Glip"
+#    type="dmg"
+#    downloadURL="https://downloads.ringcentral.com/glip/rc/GlipForMac"
+#    expectedTeamID="M932RC5J66"
+#    blockingProcesses=( "Glip" )
+#    ;;
 ringcentralclassicapp)
     name="Glip"
     type="dmg"
@@ -4459,7 +4500,8 @@ sizeup)
 sketch)
     name="Sketch"
     type="zip"
-    downloadURL=$(curl -sf https://www.sketch.com/downloads/mac/ | grep 'href="https://download.sketch.com' | sed -E 's/.*href=\"(.*)\".?/\1/g')
+#    downloadURL=$(curl -sf https://www.sketch.com/downloads/mac/ | grep 'href="https://download.sketch.com' | sed -E 's/.*href=\"(.*)\".?/\1/g')
+    downloadURL=$(curl -sf https://www.sketch.com/downloads/mac/ | grep 'href="https://download.sketch.com' | tr '"' "\n" | grep -E "https.*.zip")
     appNewVersion=$(curl -fs https://www.sketch.com/updates/ | grep "Sketch Version" | head -1 | sed -E 's/.*Version ([0-9.]*)<.*/\1/g') # version from update page
     expectedTeamID="WUGMZZ5K46"
     ;;
